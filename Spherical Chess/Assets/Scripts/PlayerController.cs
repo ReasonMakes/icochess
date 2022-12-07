@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
     private float yawDegreesAtStartOfInput = 0f;
     private float pitchDegreesAtStartOfInput = 0f;
 
-    private Transform highlightedTile;
+    [System.NonSerialized] public Transform highlightedTile;
     private int selectedTileID = -1;
 
     [System.NonSerialized] public Piece.Allegiance teamWhoseTurnItIs = Piece.Allegiance.White;
@@ -20,6 +20,11 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        //Cheats
+        teamWhoseTurnItIs = Piece.Allegiance.White;
+        control.UpdateBottomText();
+        control.UpdateTopRightText();
+
         //Tile selection
         ManipulateTileHighlightAndSelect();
         ManipulateTileMovePiece();
@@ -106,12 +111,6 @@ public class PlayerController : MonoBehaviour
                             validMoves = pieceController.GetValidTilesToMoveTo(
                                 generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>()
                             );
-
-                            Debug.Log("-------------");
-                            for (int i = 0; i < validMoves.Count; i++)
-                            {
-                                Debug.Log("Tile [" + validMoves[i].tileID + "] - " + validMoves[i].MOVE_TYPE);
-                            }
                         }
                     }
                 }
@@ -292,6 +291,6 @@ public class PlayerController : MonoBehaviour
         }
 
         //Update HUD to show on-screen info like whose turn it is
-        control.UpdateHUD();
+        control.UpdateBottomText();
     }
 }

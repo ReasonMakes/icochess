@@ -55,23 +55,92 @@ public class PieceController : MonoBehaviour
         //Each piece type has their own set of valid moves
         if (piece.type == Piece.Type.Pawn)
         {
-            //Pawns move or capture along edges
-            for (int i = 0; i < generation.tiles[piece.tileID].adjacentNeighborIDsEdge.Count; i++)
+            //Pawns move/capture one edge away
+            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            for (int i = 0; i < tilesToCheck.Count; i++)
             {
-                //Tile data
-                int tileID = generation.tiles[generation.tiles[piece.tileID].adjacentNeighborIDsEdge[i]].id;
-                Piece.Allegiance pieceAllegienceOnTile = GetTilePieceAllegiance(tileID);
+                SetBasicMoveTileInteractions(ref validTilesToMoveTo, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
+            }
+        }
+        else if (piece.type == Piece.Type.King)
+        {
+            //Kings move/capture one edge away - todo: castling
+            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            for (int i = 0; i < tilesToCheck.Count; i++)
+            {
+                SetBasicMoveTileInteractions(ref validTilesToMoveTo, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
+            }
+        }
+        else if (piece.type == Piece.Type.Knight)
+        {
+            //Knights move/capture one side corner away
+            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsCornerSide;
+            for (int i = 0; i < tilesToCheck.Count; i++)
+            {
+                SetBasicMoveTileInteractions(ref validTilesToMoveTo, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
+            }
+        }
+        else if (piece.type == Piece.Type.Bishop)
+        {
+            //Initial move - check each "direction" for valid moves - edges first
+            //Todo: Allow starting direction to be a direct corner
+            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            for (int i = 0; i < tilesToCheck.Count; i++)
+            {
+                //EACH EDGE TILE AROUND THE PIECE
+                int immediateTileID = generation.tiles[tilesToCheck[i]].id;
 
-                //Interactions
-                if (pieceAllegienceOnTile == enemyAllegiance)
+                //Base interactions around immediate edges
+                SetBasicMoveTileInteractions(ref validTilesToMoveTo, enemyAllegiance, immediateTileID);
+
+                //Recursion
+                //Setup default variables to be used in recursion
+                int currentTileID = immediateTileID; //start recursion from an immediate edge
+                int previous1TileID = immediateTileID;
+                int previous2TileID = piece.tileID;
+                List<int> tilesToCheckInRecursion;
+                bool previousTileWasEdge = true;
+
+                int tileDistance = 3;
+                for (int j = 0; j < tileDistance; j++)
                 {
-                    validTilesToMoveTo.Add(new Move(Move.MoveType.Capture, tileID));
-                    SpawnValidMovePoint(tileID);
-                }
-                else if (pieceAllegienceOnTile == Piece.Allegiance.None)
-                {
-                    validTilesToMoveTo.Add(new Move(Move.MoveType.Move, tileID));
-                    SpawnValidMovePoint(tileID);
+                    //Recurse
+                    //Alternate between checking edges and corners
+                    if (previousTileWasEdge)
+                    {
+                        tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsCornerDirect;
+                    }
+                    else
+                    {
+                        tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsEdge;
+                    }
+                    previousTileWasEdge = !previousTileWasEdge;
+
+                    //Find the next tile in this direction (there will only be one) and consider adding it to the list of valid moves
+                    for (int k = 0; k < tilesToCheckInRecursion.Count; k++)
+                    {
+                        currentTileID = generation.tiles[tilesToCheckInRecursion[k]].id;
+
+                        //PreviousTileID2 and currentTileID must share no vertices - ensures we aren't veering off to the side and aren't going back somewhere we just came from
+                        int sharedVertices = generation.GetTileSharedVertices(previous2TileID, currentTileID);
+                        //Debug.Log(sharedVertices);
+                        Debug.Log(previous1TileID);
+                        
+                        if (sharedVertices == 0)
+                        {
+                            //Valid move tile (as long as not occupied by friendly piece)
+                            SetBasicMoveTileInteractions(ref validTilesToMoveTo, enemyAllegiance, currentTileID);
+
+                            //Break so that we "lock in" the currentTileID so we continue on from that tile instead of continuing from an invalid tile
+                            break;
+
+                            //WE ARE NOT CHECKING VALID TILE HERE CORRECTLY
+                        }
+                    }
+
+                    //Update tile history
+                    previous2TileID = previous1TileID;
+                    previous1TileID = currentTileID;
                 }
             }
         }
@@ -80,9 +149,37 @@ public class PieceController : MonoBehaviour
         return validTilesToMoveTo;
     }
 
-    private void SpawnValidMovePoint(int tileID)
+    private void SetBasicMoveTileInteractions(ref List<Move> validTilesToMoveTo, Piece.Allegiance enemyAllegiance, int tileID)
     {
-        GameObject instanceValidMovePoint = Instantiate(validMovePointPrefab, generation.tiles[tileID].centroidAndNormal * 1.003f, Quaternion.identity);
+        //Basic tile interaction:
+        //Any tile that is within range of the piece can be moved to as long as it is not occupied by a friendly piece.
+        //If an enemy piece occupies it, the enemy piece will be capture and this piece will then occupy the tile the enemy used to.
+        //Move points will be spawned on tiles that are valid moves so that the player can see their options. (These are cleared in other scripts.)
+
+        Piece.Allegiance pieceAllegienceOnTile = GetTilePieceAllegiance(tileID);
+        if (pieceAllegienceOnTile == enemyAllegiance)
+        {
+            validTilesToMoveTo.Add(new Move(Move.MoveType.Capture, tileID));
+            SpawnValidMovePoint(tileID, true);
+        }
+        else if (pieceAllegienceOnTile == Piece.Allegiance.None)
+        {
+            validTilesToMoveTo.Add(new Move(Move.MoveType.Move, tileID));
+            SpawnValidMovePoint(tileID, false);
+        }
+    }
+
+    private void SpawnValidMovePoint(int tileID, bool isCaptureTile)
+    {
+        GameObject instanceValidMovePoint = Instantiate(
+            validMovePointPrefab,
+            generation.tiles[tileID].centroidAndNormal * 1.006f, //1.003f,
+            Quaternion.identity
+        );
+        if (isCaptureTile)
+        {
+            instanceValidMovePoint.transform.localScale = Vector3.one * 0.1f;
+        }
         instanceValidMovePoint.transform.parent = generation.points.transform;
         instanceValidMovePoint.transform.rotation = Quaternion.LookRotation(generation.tiles[tileID].centroidAndNormal);
     }
@@ -299,31 +396,31 @@ public class PieceController : MonoBehaviour
 
     public void SpawnPiecesDefault()
     {
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.King, 0);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Queen, 3);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.King, 0);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Queen, 3);
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 4);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 16);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Rook, 19);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Rook, 7);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Knight, 5);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Knight, 18);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 2);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 12);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 8);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 1);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 16);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Rook, 19);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Rook, 7);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Knight, 5);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Knight, 18);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 2);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 12);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 8);
+        //SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 1);
 
         SpawnPiece(Piece.Allegiance.Black, Piece.Type.King, 52);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Queen, 55);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 48);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 56);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Rook, 51);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Rook, 59);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Knight, 57);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Knight, 50);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 53);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 54);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 40);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 44);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Queen, 55);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 48);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 56);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Rook, 51);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Rook, 59);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Knight, 57);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Knight, 50);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 53);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 54);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 40);
+        //SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 44);
     }
 
     private void SpawnPiece(Piece.Allegiance allegiance, Piece.Type type, int tileID)

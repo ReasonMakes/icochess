@@ -294,7 +294,7 @@ public class Generation : MonoBehaviour
         meshRenderer.material = materialLit;
         meshRenderer.material.color = tile.color;
 
-        //Collider
+        //Collider (for selecting with raycasting)
         MeshCollider meshCollider = instanceTile.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
     }
@@ -307,18 +307,7 @@ public class Generation : MonoBehaviour
             for (int j = 0; j < tiles.Count; j++)
             {
                 //If any vertices are shared
-                int sharedVertices = 0;
-                if (tiles[i].vertexA == tiles[j].vertexA) sharedVertices++;
-                if (tiles[i].vertexA == tiles[j].vertexB) sharedVertices++;
-                if (tiles[i].vertexA == tiles[j].vertexC) sharedVertices++;
-
-                if (tiles[i].vertexB == tiles[j].vertexA) sharedVertices++;
-                if (tiles[i].vertexB == tiles[j].vertexB) sharedVertices++;
-                if (tiles[i].vertexB == tiles[j].vertexC) sharedVertices++;
-
-                if (tiles[i].vertexC == tiles[j].vertexA) sharedVertices++;
-                if (tiles[i].vertexC == tiles[j].vertexB) sharedVertices++;
-                if (tiles[i].vertexC == tiles[j].vertexC) sharedVertices++;
+                int sharedVertices = GetTileSharedVertices(i, j);
 
                 //Debug.Log("Tile[" + i + "] + Tile[" + j + "] shared verts: " + sharedVertices);
                 if (sharedVertices == 2)
@@ -333,6 +322,25 @@ public class Generation : MonoBehaviour
                 }
             }
         }
+    }
+
+    public int GetTileSharedVertices(int tileID1, int tileID2)
+    {
+        int sharedVertices = 0;
+
+        if (tiles[tileID1].vertexA == tiles[tileID2].vertexA) sharedVertices++;
+        if (tiles[tileID1].vertexA == tiles[tileID2].vertexB) sharedVertices++;
+        if (tiles[tileID1].vertexA == tiles[tileID2].vertexC) sharedVertices++;
+
+        if (tiles[tileID1].vertexB == tiles[tileID2].vertexA) sharedVertices++;
+        if (tiles[tileID1].vertexB == tiles[tileID2].vertexB) sharedVertices++;
+        if (tiles[tileID1].vertexB == tiles[tileID2].vertexC) sharedVertices++;
+
+        if (tiles[tileID1].vertexC == tiles[tileID2].vertexA) sharedVertices++;
+        if (tiles[tileID1].vertexC == tiles[tileID2].vertexB) sharedVertices++;
+        if (tiles[tileID1].vertexC == tiles[tileID2].vertexC) sharedVertices++;
+
+        return sharedVertices;
     }
 
     private void TilesGetSideNeighborData()

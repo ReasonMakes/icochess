@@ -23,19 +23,38 @@ public class Control : MonoBehaviour
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 240;
-        UpdateHUD();
+        UpdateBottomText();
     }
 
     private void Update()
     {
         if ((Time.time - previousPrintTime) > FPS_PRINT_PERIOD)
         {
-            infoTopRight.text = (int)(1f / Time.unscaledDeltaTime) + " fps";
+            UpdateTopRightText();
+
+            //Get ready to print next update
             previousPrintTime = Time.time;
         }
     }
 
-    public void UpdateHUD()
+    public void UpdateTopRightText()
+    {
+        //Get data
+        int highlightedTileID = -1;
+        if (playerController.highlightedTile != null)
+        {
+            highlightedTileID = playerController.highlightedTile.GetComponent<TileInstance>().id;
+        }
+
+        int fps = (int)(1f / Time.unscaledDeltaTime);
+
+        //Text
+        infoTopRight.text =
+            fps + " fps"
+            + "\nTile " + highlightedTileID;
+    }
+
+    public void UpdateBottomText()
     {
         infoBottom.text = playerController.teamWhoseTurnItIs + " to play";
     }
