@@ -18,6 +18,7 @@ public class Piece : MonoBehaviour
 
     public enum Allegiance
     {
+        None,
         White,
         Black
     }
@@ -25,6 +26,7 @@ public class Piece : MonoBehaviour
 
     public enum Type
     {
+        None,
         Pawn, //Yes, I know pawns are not pieces, however "Material" has a namespace conflict!
         Knight,
         Bishop,

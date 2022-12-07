@@ -9,10 +9,10 @@ public class Generation : MonoBehaviour
     private static readonly float PHI = 1.6180339887f; //(1.0f + Mathf.Sqrt(5.0f)) / 2.0f
 
     //References
-    public GameObject point;
-    public GameObject plots;
+    public PieceController pieceController;
+    public GameObject pointBillboardPrefab;
+    public GameObject points;
     public GameObject prefabTile;
-    public GameObject prefabPiece;
 
     //Procedural mesh
     public Material materialLit;
@@ -60,40 +60,16 @@ public class Generation : MonoBehaviour
         AssembleMeshAndGetTileData();
         GenerateAllTiles();
 
-        //Set up material
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.King, 0);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Queen, 3);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 4);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 16);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Rook, 19);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Rook, 7);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Knight, 5);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Knight, 18);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 2);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 12);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 8);
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 1);
-
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.King, 52);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Queen, 55);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 48);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 56);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Rook, 51);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Rook, 59);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Knight, 57);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Knight, 50);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 53);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 54);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 40);
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.Pawn, 44);
+        //Set up material - we do this in this script here because this needs to happen after the tiles are generated
+        pieceController.SpawnPiecesDefault();
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            TilesDebugPrint();
-        }
+        //if (Input.GetKeyDown(KeyCode.F))
+        //{
+        //    TilesDebugPrint();
+        //}
     }
 
     private void InitShapeIcosahedron()
@@ -474,18 +450,6 @@ public class Generation : MonoBehaviour
                 Debug.Log("CornerDirect[" + i + "," + k + "] = " + tiles[i].adjacentNeighborIDsCornerDirect[k]);
             }
         }
-    }
-
-    private void SpawnPiece(Piece.Allegiance allegiance, Piece.Type type, int tileID)
-    {
-        GameObject instancePawn = Instantiate(prefabPiece);
-
-        Piece instancePieceScript = instancePawn.GetComponent<Piece>();
-        instancePieceScript.generation = this;
-        instancePieceScript.allegiance = allegiance;
-        instancePieceScript.type = type;
-        instancePieceScript.SetModel();
-        instancePieceScript.SetTile(tileID);
     }
 }
 
