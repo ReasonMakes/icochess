@@ -8,6 +8,16 @@ public class PieceController : MonoBehaviour
     public GameObject piecePrefab;
     public GameObject validMovePointPrefab;
 
+    [System.NonSerialized] public Material selectedMaterialForWhite;
+    [System.NonSerialized] public Material selectedMaterialForBlack;
+
+    public Material flatMetalBlue;
+    public Material flatMetalRed;
+    public Material smoothMetalWhite;
+    public Material smoothMetalBlack;
+    public Material smoothMetalBlue;
+    public Material smoothMetalRed;
+
     [System.NonSerialized] public List<Piece> pieces = new List<Piece> { };
 
     private readonly int WHITE_KING_SPAWN_TILE_ID = 0;
@@ -34,6 +44,12 @@ public class PieceController : MonoBehaviour
             this.MOVE_TYPE = moveType;
             this.tileID = tileID;
         }
+    }
+
+    private void Awake()
+    {
+        selectedMaterialForWhite = smoothMetalBlue;
+        selectedMaterialForBlack = smoothMetalRed;
     }
 
     public List<Move> GetValidTilesToMoveTo(Piece piece)
@@ -353,184 +369,6 @@ public class PieceController : MonoBehaviour
         return Piece.Allegiance.None;
     }
 
-    //private MoveRule IsValidMove(Piece piece, int tileIDToMoveTo, int tileIDMovingFrom)
-    //{
-    //    if (generation.tiles[tileIDToMoveTo].instancePieceGameObject == null)
-    //    {
-    //        //MOVING - Empty tile
-    //        if (piece.type == Piece.Type.Pawn)
-    //        {
-    //            //Pawns move one edge away
-    //            if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.Edge)
-    //            {
-    //                return MoveRule.Move;
-    //            }
-    //            else
-    //            {
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //        else if (piece.type == Piece.Type.Knight)
-    //        {
-    //            //Knights move one side corner away
-    //            if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.CornerSide)
-    //            {
-    //                return MoveRule.Move;
-    //            }
-    //            else
-    //            {
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //        else if (piece.type == Piece.Type.Bishop)
-    //        {
-    //            //Bishops move via direct corners
-    //            if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.CornerDirect)
-    //            {
-    //                return MoveRule.Move;
-    //            }
-    //            else
-    //            {
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //        else if (piece.type == Piece.Type.Rook)
-    //        {
-    //            //Rooks move via edges
-    //            if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.Edge)
-    //            {
-    //                return MoveRule.Move;
-    //            }
-    //            else
-    //            {
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //        else if (piece.type == Piece.Type.Queen)
-    //        {
-    //            //Queens move via edges or direct corners
-    //            Generation.TileNeighborType neighborType = generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom);
-    //            if (neighborType == Generation.TileNeighborType.Edge || neighborType == Generation.TileNeighborType.CornerDirect)
-    //            {
-    //                return MoveRule.Move;
-    //            }
-    //            else
-    //            {
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //        else if (piece.type == Piece.Type.King)
-    //        {
-    //            //Kings move one edge away
-    //            if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.Edge)
-    //            {
-    //                return MoveRule.Move;
-    //            }
-    //            else
-    //            {
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //        else
-    //        {
-    //            Debug.LogError("Uncaught move error");
-    //            return MoveRule.Forbidden;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        //CAPTURING - Occupied tile
-    //        if (generation.tiles[tileIDToMoveTo].instancePieceGameObject.GetComponent<Piece>().allegiance == piece.allegiance)
-    //        {
-    //            //Friendly piece
-    //            //Debug.Log("Can't move ontop of or capture own pieces");
-    //            return MoveRule.Forbidden;
-    //        }
-    //        else
-    //        {
-    //            //Hostile piece
-    //            if (piece.type == Piece.Type.Pawn)
-    //            {
-    //                //Pawns attack one edge away
-    //                if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.Edge)
-    //                {
-    //                    return MoveRule.Capture;
-    //                }
-    //                else
-    //                {
-    //                    return MoveRule.Forbidden;
-    //                }
-    //            }
-    //            else if (piece.type == Piece.Type.Knight)
-    //            {
-    //                //Knights attack one side corner away
-    //                if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.CornerSide)
-    //                {
-    //                    return MoveRule.Capture;
-    //                }
-    //                else
-    //                {
-    //                    return MoveRule.Forbidden;
-    //                }
-    //            }
-    //            else if (piece.type == Piece.Type.Bishop)
-    //            {
-    //                //Bishops attack via direct corners
-    //                if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.CornerDirect)
-    //                {
-    //                    return MoveRule.Capture;
-    //                }
-    //                else
-    //                {
-    //                    return MoveRule.Forbidden;
-    //                }
-    //            }
-    //            else if (piece.type == Piece.Type.Rook)
-    //            {
-    //                //Rooks attack via edges
-    //                if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.Edge)
-    //                {
-    //                    return MoveRule.Capture;
-    //                }
-    //                else
-    //                {
-    //                    return MoveRule.Forbidden;
-    //                }
-    //            }
-    //            else if (piece.type == Piece.Type.Queen)
-    //            {
-    //                //Queens attack via edges or direct corners
-    //                Generation.TileNeighborType neighborType = generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom);
-    //                if (neighborType == Generation.TileNeighborType.Edge || neighborType == Generation.TileNeighborType.CornerDirect)
-    //                {
-    //                    return MoveRule.Capture;
-    //                }
-    //                else
-    //                {
-    //                    return MoveRule.Forbidden;
-    //                }
-    //            }
-    //            else if (piece.type == Piece.Type.King)
-    //            {
-    //                //Kings attack one edge away
-    //                if (generation.IsTileNeighbor(tileIDToMoveTo, tileIDMovingFrom) == Generation.TileNeighborType.Edge)
-    //                {
-    //                    return MoveRule.Capture;
-    //                }
-    //                else
-    //                {
-    //                    return MoveRule.Forbidden;
-    //                }
-    //            }
-    //            else
-    //            {
-    //                Debug.LogError("Uncaught move error");
-    //                return MoveRule.Forbidden;
-    //            }
-    //        }
-    //    }
-    //}
-
     public void SpawnPiecesDefault()
     {
         SpawnPiece(Piece.Allegiance.White, Piece.Type.King, WHITE_KING_SPAWN_TILE_ID);
@@ -567,6 +405,7 @@ public class PieceController : MonoBehaviour
 
         Piece instancePieceScript = instancePawn.GetComponent<Piece>();
         instancePieceScript.generation = generation;
+        instancePieceScript.pieceController = this;
         instancePieceScript.allegiance = allegiance;
         instancePieceScript.type = type;
         instancePieceScript.SetModel();

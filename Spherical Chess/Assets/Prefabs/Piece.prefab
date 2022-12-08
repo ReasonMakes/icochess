@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 5241358926979201656}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -94,15 +94,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8f47d4f46023794c9d5347eaa74aa69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  generation: {fileID: 0}
-  meshPawn: {fileID: -2432090755550338912, guid: 18c14c2856b4f2243a3bd7a4d8a510e7, type: 3}
-  meshKnight: {fileID: -2432090755550338912, guid: 93592ec465833ba4f8ec439329424e43, type: 3}
-  meshBishop: {fileID: -2432090755550338912, guid: bd6c5a18a83811b479703c3f92021d64, type: 3}
-  meshRook: {fileID: -2432090755550338912, guid: f5f35179590131144a480a05b340f22a, type: 3}
-  meshQueen: {fileID: -2432090755550338912, guid: a49cec1e16c4cdd4b87ce053b2b841b7, type: 3}
-  meshKing: {fileID: -2432090755550338912, guid: cc1a5591258899a469665126b4933589, type: 3}
-  metalWhite: {fileID: 2100000, guid: b2c1650eb0f19ed4dbbc52889aef5b1c, type: 2}
-  metalBlack: {fileID: 2100000, guid: b172dc02c9e27984d829784b507b359a, type: 2}
+  meshPawn: {fileID: -2432090755550338912, guid: f268f97800672ca42a70bdabbb3e18cb, type: 3}
+  meshKnight: {fileID: -2432090755550338912, guid: 865f65f20ff6dc04db6c3d2654198bca, type: 3}
+  meshBishop: {fileID: -2432090755550338912, guid: 117a0a8855473af4e9fc1b9e733eb496, type: 3}
+  meshRook: {fileID: -2432090755550338912, guid: a48a3dc231b687940a9d1b9cfad1fef5, type: 3}
+  meshQueen: {fileID: -2432090755550338912, guid: 30aff3bee0c7e4847a68122df224cf72, type: 3}
+  meshKing: {fileID: -2432090755550338912, guid: 79bfeadebcb4da64180eafd6f2fb2ae6, type: 3}
   allegiance: 0
   type: 0
   tileID: -1

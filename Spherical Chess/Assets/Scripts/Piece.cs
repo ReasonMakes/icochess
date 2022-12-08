@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class Piece : MonoBehaviour
 {
-    public Generation generation;
+    //Assigned when instantiated
+    [System.NonSerialized] public Generation generation;
+    [System.NonSerialized] public PieceController pieceController;
 
     public Mesh meshPawn;
     public Mesh meshKnight;
@@ -12,9 +14,6 @@ public class Piece : MonoBehaviour
     public Mesh meshRook;
     public Mesh meshQueen;
     public Mesh meshKing;
-
-    public Material metalWhite;
-    public Material metalBlack;
 
     public enum Allegiance
     {
@@ -51,8 +50,8 @@ public class Piece : MonoBehaviour
         if (type == Type.Queen)     { GetComponent<MeshFilter>().mesh = meshQueen; }
         if (type == Type.King)      { GetComponent<MeshFilter>().mesh = meshKing; }
 
-        if (allegiance == Allegiance.White) { GetComponent<MeshRenderer>().material = metalWhite; }
-        if (allegiance == Allegiance.Black) { GetComponent<MeshRenderer>().material = metalBlack; }
+        if (allegiance == Allegiance.White) { GetComponent<MeshRenderer>().material = pieceController.selectedMaterialForWhite; }
+        if (allegiance == Allegiance.Black) { GetComponent<MeshRenderer>().material = pieceController.selectedMaterialForBlack; }
     }
 
     public void SetTile(int tileID)
@@ -65,7 +64,7 @@ public class Piece : MonoBehaviour
         this.tileID = tileID;
         generation.tiles[tileID].instancePieceGameObject = gameObject;      //set new tile's piece reference
 
-        transform.position = generation.tiles[tileID].centroidAndNormal * 0.92f;
+        transform.position = generation.tiles[tileID].centroidAndNormal;// * 0.92f;
         transform.rotation = Quaternion.LookRotation(generation.tiles[tileID].centroidAndNormal);
         transform.Rotate(90, 0, 0);
     }

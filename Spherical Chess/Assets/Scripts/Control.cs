@@ -11,6 +11,7 @@ public class Control : MonoBehaviour
     [System.NonSerialized] private TextMeshProUGUI infoBottom;
 
     private readonly int FPS_PRINT_PERIOD = 1;
+    private int fps = 0;
     private float previousPrintTime = 0;
 
     private void Awake()
@@ -22,7 +23,7 @@ public class Control : MonoBehaviour
     private void Start()
     {
         QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = 240;
+        Application.targetFrameRate = 300;
         UpdateBottomText();
     }
 
@@ -30,28 +31,34 @@ public class Control : MonoBehaviour
     {
         if ((Time.time - previousPrintTime) > FPS_PRINT_PERIOD)
         {
-            UpdateTopRightText();
+            UpdateFPS();
 
             //Get ready to print next update
             previousPrintTime = Time.time;
         }
-    }
 
-    public void UpdateTopRightText()
-    {
         //Get data
-        int highlightedTileID = -1;
+        int highlightedTileID;
+        string tileString;
         if (playerController.highlightedTile != null)
         {
             highlightedTileID = playerController.highlightedTile.GetComponent<TileInstance>().id;
+            tileString = "\nTile " + highlightedTileID;
+        }
+        else
+        {
+            tileString = "";
         }
 
-        int fps = (int)(1f / Time.unscaledDeltaTime);
-
         //Text
-        infoTopRight.text =
-            fps + " fps"
-            + "\nTile " + highlightedTileID;
+        infoTopRight.text = fps + " fps" + tileString;
+    }
+
+    public void UpdateFPS()
+    {
+
+        fps = (int)(1f / Time.unscaledDeltaTime);
+
     }
 
     public void UpdateBottomText()
