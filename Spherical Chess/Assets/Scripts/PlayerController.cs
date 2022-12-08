@@ -115,7 +115,8 @@ public class PlayerController : MonoBehaviour
                         {
                             validMoves.Clear();
                             validMoves = pieceController.GetValidTilesToMoveTo(
-                                generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>()
+                                generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>(),
+                                true
                             );
                         }
                     }
@@ -286,13 +287,26 @@ public class PlayerController : MonoBehaviour
 
     private void EndTurn()
     {
-        //Switch whose turn it is
+        //Check for checks, then switch whose turn it is
+        control.infoTopLeft.text = "Checks:";
+        control.infoTopLeft.gameObject.SetActive(false);
+        pieceController.checkState = PieceController.Check.None;
         if (teamWhoseTurnItIs == Piece.Allegiance.White)
         {
+            if (pieceController.CheckForChecksAgainst(Piece.Allegiance.Black))
+            {
+                pieceController.checkState = PieceController.Check.Black;
+                control.infoTopLeft.gameObject.SetActive(true);
+            }
             teamWhoseTurnItIs = Piece.Allegiance.Black;
         }
         else if (teamWhoseTurnItIs == Piece.Allegiance.Black)
         {
+            if (pieceController.CheckForChecksAgainst(Piece.Allegiance.White))
+            {
+                pieceController.checkState = PieceController.Check.White;
+                control.infoTopLeft.gameObject.SetActive(true);
+            }
             teamWhoseTurnItIs = Piece.Allegiance.White;
         }
 

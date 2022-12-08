@@ -8,8 +8,9 @@ public class Control : MonoBehaviour
     public PlayerController playerController;
     public PieceController pieceController;
 
-    [System.NonSerialized] private TextMeshProUGUI infoTopRight;
-    [System.NonSerialized] private TextMeshProUGUI infoBottom;
+    [System.NonSerialized] public TextMeshProUGUI infoTopLeft;
+    private TextMeshProUGUI infoTopRight;
+    private TextMeshProUGUI infoBottom;
 
     private readonly int FPS_PRINT_PERIOD = 1;
     private int fps = 0;
@@ -19,6 +20,7 @@ public class Control : MonoBehaviour
 
     private void Awake()
     {
+        infoTopLeft = transform.Find("Canvas").Find("Info Top-Left").GetComponent<TextMeshProUGUI>();
         infoTopRight = transform.Find("Canvas").Find("Info Top-Right").GetComponent<TextMeshProUGUI>();
         infoBottom = transform.Find("Canvas").Find("Info Bottom").GetComponent<TextMeshProUGUI>();
     }
@@ -87,5 +89,9 @@ public class Control : MonoBehaviour
     public void UpdateBottomText()
     {
         infoBottom.text = playerController.teamWhoseTurnItIs + " to play";
+        if (pieceController.checkState != PieceController.Check.None)
+        {
+            infoBottom.text += "\n" + pieceController.checkState + " is in check";
+        }
     }
 }
