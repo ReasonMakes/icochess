@@ -99,7 +99,7 @@ public class PieceController : MonoBehaviour
         }
         else if (piece.type == Piece.Type.King)
         {
-            //Kings move/capture one edge away - todo: castling
+            //Kings move/capture one edge away
             List<int> tileNeighborsToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
             for (int i = 0; i < tileNeighborsToCheck.Count; i++)
             {
@@ -121,6 +121,7 @@ public class PieceController : MonoBehaviour
         {
             if (piece.type == Piece.Type.Bishop || piece.type == Piece.Type.Queen)
             {
+                //Bishops move/capture infinitely from edges to direct corners and vice versa along one direction
                 //Initial move - check each "direction" for valid moves
                 List<int> tilesToCheck;
                 bool previousTileWasEdgeInitial;
@@ -215,6 +216,7 @@ public class PieceController : MonoBehaviour
 
             if (piece.type == Piece.Type.Rook || piece.type == Piece.Type.Queen)
             {
+                //Rooks move/capture infinitely from edge to edge along one direction
                 //Immediate edges
                 List<int> tilesImmediateEdges = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
                 for (int i = 0; i < tilesImmediateEdges.Count; i++)

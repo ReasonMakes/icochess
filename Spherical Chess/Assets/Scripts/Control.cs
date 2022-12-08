@@ -6,13 +6,16 @@ using UnityEngine;
 public class Control : MonoBehaviour
 {
     public PlayerController playerController;
+    public PieceController pieceController;
 
     [System.NonSerialized] private TextMeshProUGUI infoTopRight;
     [System.NonSerialized] private TextMeshProUGUI infoBottom;
 
     private readonly int FPS_PRINT_PERIOD = 1;
     private int fps = 0;
-    private float previousPrintTime = 0;
+    private float previousFPSPrintTime = 0;
+    private string tileString;
+    private bool fullscreen = false;
 
     private void Awake()
     {
@@ -29,36 +32,56 @@ public class Control : MonoBehaviour
 
     private void Update()
     {
-        if ((Time.time - previousPrintTime) > FPS_PRINT_PERIOD)
+        //SETTINGS
+        if (Input.GetKeyDown(KeyCode.F11))
         {
-            UpdateFPS();
-
-            //Get ready to print next update
-            previousPrintTime = Time.time;
+            fullscreen = !fullscreen;
         }
-
-        //Get data
-        int highlightedTileID;
-        string tileString;
-        if (playerController.highlightedTile != null)
+        if (fullscreen)
         {
-            highlightedTileID = playerController.highlightedTile.GetComponent<TileInstance>().id;
-            tileString = "\nTile " + highlightedTileID;
+            Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
         }
         else
         {
-            tileString = "";
+            Screen.fullScreenMode = FullScreenMode.Windowed;
+        }
+
+        //UI
+        if ((Time.time - previousFPSPrintTime) > FPS_PRINT_PERIOD)
+        {
+            //Calculate fps
+            fps = (int)(1f / Time.unscaledDeltaTime);
+
+            //Get ready to print next update
+            previousFPSPrintTime = Time.time;
         }
 
         //Text
         infoTopRight.text = fps + " fps" + tileString;
     }
 
-    public void UpdateFPS()
+    public void UpdateTileRelatedText()
     {
+        if (playerController.highlightedTile != null)
+        {
+            int highlightedTileID = playerController.highlightedTile.GetComponent<TileInstance>().id;
+            tileString = "\nTile " + highlightedTileID;
 
-        fps = (int)(1f / Time.unscaledDeltaTime);
+            Piece.Allegiance pieceAllegianceOnHighlightedTile = pieceController.GetTilePieceAllegiance(highlightedTileID);
+            if (pieceAllegianceOnHighlightedTile != Piece.Allegiance.None)
+            {
+                tileString += "\n" + pieceAllegianceOnHighlightedTile + " " + pieceController.GetTilePieceType(highlightedTileID);
+            }
+        }
+        else
+        {
+            tileString = "";
+        }
+    }
 
+    public void ClearTileRelatedText()
+    {
+        tileString = "";
     }
 
     public void UpdateBottomText()

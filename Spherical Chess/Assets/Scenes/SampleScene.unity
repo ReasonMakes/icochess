@@ -1275,6 +1275,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerController: {fileID: 1687258587}
+  pieceController: {fileID: 421754991}
 --- !u!4 &2093690509
 Transform:
   m_ObjectHideFlags: 0

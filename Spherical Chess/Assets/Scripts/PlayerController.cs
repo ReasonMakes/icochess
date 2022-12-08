@@ -55,12 +55,18 @@ public class PlayerController : MonoBehaviour
 
             //Self
             SetHighlightedTileAndNeighbors(highlightedTile, false);
+
+            //Update tile related UI text
+            control.UpdateTileRelatedText();
         }
         else
         {
             //Reset highlightedTile
             SetHighlightedTileAndNeighbors(highlightedTile, true);
             highlightedTile = null;
+
+            //Update tile related UI text
+            control.ClearTileRelatedText();
         }
 
         //SELECT
