@@ -7,17 +7,18 @@ https://free3d.com/3d-model/chess-19650.html
 
 ## Controls
 
-- Left-click hold and drag: orbit the camera around the pentakis icosidodecahedron
-- Left-click on a tile:     select that tile
-- Right-click on a tile:    move the piece on the tile you have selected to that tile/capture that enemy piece
-- Scroll up/down:           move the camera closer/farther from the pentakis icosidodecahedron
-- F11:                      toggle fullscreen
+- Left-click, hold and drag: 	orbit the camera around the pentakis icosidodecahedron
+- Shift, hold:					roll the camera via the x axis of mouse movement
+- Left-click on a tile:     	select that tile
+- Right-click on a tile:    	move the piece on the tile you have selected to that tile/capture that enemy piece
+- Scroll up/down:           	move the camera closer/farther from the pentakis icosidodecahedron
+- F11:                      	toggle fullscreen
 
 ## Piece Beviours
 
 - Pawns:			move/capture one edge away. Unlike in 2D chess, there is no en passant and no promoting; and pawns can move "backwards"
-- Knights:	  move/capture one side corner away, ignoring obstructions in the way
-- Bishops:		move/capture infinitely from edges to direct corners and vice versa along one direction
+- Knights:	  		move/capture one side corner away, ignoring obstructions in the way
+- Bishops:			move/capture infinitely from edges to direct corners and vice versa along one direction
 - Rooks:			move/capture infinitely from edge to edge along one direction
 - Kings: 			move/capture one edge away
 - Queens:			have all the valid moves of a rook and a bishop at the same time
@@ -41,7 +42,7 @@ If there are no legal moves (ex: your king would be in check), the game is said 
 Tiles are said to be neighbours when they shared one or more vertices.
 Each tile has three distinct types of neighbours.
 
-- Edges:				    share two vertices
+- Edges:				share two vertices
 - Side corners: 		share one vertex and are mutual neighbours with an edge neighbour
 - Direct corners:		share one vertex and all vertex positions are symmetrical
 

@@ -8,10 +8,11 @@ public class CameraController : MonoBehaviour
     public PieceController pieceController;
 
     //private float moveSpeed = 0.06f;
-    private float mouseSensitivity = 2f;
+    private float mouseSensitivity = 1f;
     [System.NonSerialized] public float yawDegrees = 0f;
     [System.NonSerialized] public float pitchDegrees = 0f;
     private float cameraDistanceToCenter = 2.5f;
+    //private bool upsideDown = false;
 
     private void Start()
     {
@@ -26,27 +27,101 @@ public class CameraController : MonoBehaviour
 
     private void MoveCameraRotateAroundIcoCenter()
     {
-        //Rotate camera around world origin
         if (Input.GetKey(KeyCode.Mouse0))
         {
-            yawDegrees += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-            yawDegrees %= 360f;
-            pitchDegrees = Mathf.Clamp(pitchDegrees + (Input.GetAxisRaw("Mouse Y") * mouseSensitivity), -89f, 89f);
-        }
+            //Get input
+            float sensitivityMultipler = 0.1f;
+            float xDelta = -Input.GetAxisRaw("Mouse X") * mouseSensitivity * sensitivityMultipler;
+            float yDelta = -Input.GetAxisRaw("Mouse Y") * mouseSensitivity * sensitivityMultipler;
 
-        Quaternion rotation = Quaternion.Euler(pitchDegrees, yawDegrees, 0);
-        transform.position = rotation * Vector3.forward * cameraDistanceToCenter;
+            //Use mouse x to orbit or to roll
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                //Roll camera
+                Quaternion rotationToRoll = Quaternion.LookRotation(Vector3.zero - transform.position, -transform.right * Mathf.Sign(xDelta));
+                if (rotationToRoll != Quaternion.identity)
+                {
+                    float rollSensitivityMultiplier = 0.25f;
+                    transform.localRotation = Quaternion.Slerp(
+                        transform.localRotation,
+                        rotationToRoll,
+                        Mathf.Abs(xDelta * rollSensitivityMultiplier)
+                    );
+                }
+            }
+            else
+            {
+                //Orbit camera horizontally
+                transform.position += transform.right * xDelta;
+            }
 
-        //Always look at world origin
-        Quaternion lookRotation = Quaternion.LookRotation(Vector3.zero - transform.position);
-        if (lookRotation != Quaternion.identity)
-        {
-            transform.localRotation = lookRotation;
+            //Orbit camera vertically
+            transform.position += transform.up * yDelta;
+
+            //Always look at world origin
+            Quaternion rotationToOrigin = Quaternion.LookRotation(Vector3.zero - transform.position, transform.up);
+            if (rotationToOrigin != Quaternion.identity)
+            {
+                transform.localRotation = rotationToOrigin;
+            }
         }
 
         //Zoom
         cameraDistanceToCenter = Mathf.Max(1.5f, cameraDistanceToCenter + (Input.mouseScrollDelta.y * -0.1f));
+        transform.position = transform.position.normalized * cameraDistanceToCenter;
     }
+
+    //private void MoveCameraRotateAroundIcoCenterEuler()
+    //{
+    //    //Rotate camera around world origin
+    //    if (Input.GetKey(KeyCode.Mouse0))
+    //    {
+    //        yawDegrees += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
+    //        yawDegrees %= 360f;
+    //
+    //        //pitchDegrees = Mathf.Clamp(pitchDegrees + (Input.GetAxisRaw("Mouse Y") * mouseSensitivity), -89f, 89f);
+    //        if (upsideDown)
+    //        {
+    //            pitchDegrees -= Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
+    //        }
+    //        else
+    //        {
+    //            pitchDegrees += Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
+    //        }
+    //        if (pitchDegrees >= 360f)
+    //        {
+    //            pitchDegrees -= 360f;
+    //        }
+    //        else if (pitchDegrees <= -360f)
+    //        {
+    //            pitchDegrees += 360f;
+    //        }
+    //
+    //        if (pitchDegrees <= -90f || pitchDegrees >= 90f)
+    //        {
+    //            upsideDown = true;
+    //        }
+    //        else
+    //        {
+    //            upsideDown = false;
+    //        }
+    //
+    //        Debug.Log(pitchDegrees);
+    //    }
+    //
+    //    Quaternion rotation = Quaternion.Euler(pitchDegrees, yawDegrees, 0);
+    //    transform.position = rotation * Vector3.forward * cameraDistanceToCenter;
+    //
+    //    //Always look at world origin
+    //    Quaternion lookRotation = Quaternion.LookRotation(Vector3.zero - transform.position);
+    //    if (lookRotation != Quaternion.identity)
+    //    {
+    //        transform.localRotation = lookRotation;
+    //    }
+    //
+    //    //Zoom
+    //    cameraDistanceToCenter = Mathf.Max(1.5f, cameraDistanceToCenter + (Input.mouseScrollDelta.y * -0.1f));
+    //}
 
     //private void MoveCameraFree()
     //{

@@ -9,8 +9,9 @@ public class PlayerController : MonoBehaviour
     public CameraController cameraController;
     public PieceController pieceController;
 
-    private float yawDegreesAtStartOfInput = 0f;
-    private float pitchDegreesAtStartOfInput = 0f;
+    //private float yawDegreesAtStartOfInput = 0f;
+    //private float pitchDegreesAtStartOfInput = 0f;
+    private Vector3 cameraPositionAtStartOfInput = Vector3.zero;
 
     [System.NonSerialized] public Transform highlightedTile;
     private int selectedTileID = -1;
@@ -73,19 +74,22 @@ public class PlayerController : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             //Prep to find out if moving the camera or trying to select
-            yawDegreesAtStartOfInput = cameraController.yawDegrees;
-            pitchDegreesAtStartOfInput = cameraController.pitchDegrees;
+            cameraPositionAtStartOfInput = cameraController.transform.position;
+            //yawDegreesAtStartOfInput = cameraController.yawDegrees;
+            //pitchDegreesAtStartOfInput = cameraController.pitchDegrees;
         }
         if (Input.GetMouseButtonUp(0))
         {
             //Select
-            float panThresholdToAllowSelecting = 2f;
+            float panThresholdToAllowSelecting = 0.075f; //2f;
+            float cameraMoveDistance = (cameraController.transform.position - cameraPositionAtStartOfInput).magnitude;
             if
             (
-                     cameraController.yawDegrees <= yawDegreesAtStartOfInput   + panThresholdToAllowSelecting
-                && cameraController.yawDegrees   >= yawDegreesAtStartOfInput   - panThresholdToAllowSelecting
-                && cameraController.pitchDegrees <= pitchDegreesAtStartOfInput + panThresholdToAllowSelecting
-                && cameraController.pitchDegrees >= pitchDegreesAtStartOfInput - panThresholdToAllowSelecting
+                cameraMoveDistance <= panThresholdToAllowSelecting
+                //     cameraController.yawDegrees <= yawDegreesAtStartOfInput   + panThresholdToAllowSelecting
+                //&& cameraController.yawDegrees   >= yawDegreesAtStartOfInput   - panThresholdToAllowSelecting
+                //&& cameraController.pitchDegrees <= pitchDegreesAtStartOfInput + panThresholdToAllowSelecting
+                //&& cameraController.pitchDegrees >= pitchDegreesAtStartOfInput - panThresholdToAllowSelecting
             )
             {
                 if (highlightedTile != null)
