@@ -10,6 +10,9 @@ public class PieceController : MonoBehaviour
 
     [System.NonSerialized] public List<Piece> pieces = new List<Piece> { };
 
+    private readonly int WHITE_KING_SPAWN_TILE_ID = 0;
+    private readonly int BLACK_KING_SPAWN_TILE_ID = 52;
+
     public struct Move
     {
         public enum MoveType
@@ -39,14 +42,17 @@ public class PieceController : MonoBehaviour
         List<Move> validTilesToMoveTo = new List<Move> { };
 
         //What are this pieces friends and enemies?
+        int pieceKingTileID = -1;
         Piece.Allegiance enemyAllegiance = Piece.Allegiance.None;
         if (piece.allegiance == Piece.Allegiance.White)
         {
             enemyAllegiance = Piece.Allegiance.Black;
+            pieceKingTileID = WHITE_KING_SPAWN_TILE_ID;
         }
         else if (piece.allegiance == Piece.Allegiance.Black)
         {
             enemyAllegiance = Piece.Allegiance.White;
+            pieceKingTileID = BLACK_KING_SPAWN_TILE_ID;
         }
 
         //Clear old valid move points
@@ -56,19 +62,34 @@ public class PieceController : MonoBehaviour
         if (piece.type == Piece.Type.Pawn)
         {
             //Pawns move/capture one edge away
-            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
-            for (int i = 0; i < tilesToCheck.Count; i++)
+            List<int> tileNeighborsToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            for (int i = 0; i < tileNeighborsToCheck.Count; i++)
             {
-                SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
+                int tileCheckingID = generation.tiles[tileNeighborsToCheck[i]].id;
+
+                SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tileCheckingID);
+
+                ////Pawns only being able to "move forward" was unintuitive
+                //float distanceToKingCurrent = (generation.tiles[piece.tileID].centroidAndNormal - generation.tiles[pieceKingTileID].centroidAndNormal).magnitude;
+                //float distanceToKingPotential = (generation.tiles[tileCheckingID].centroidAndNormal - generation.tiles[pieceKingTileID].centroidAndNormal).magnitude;
+                //float distanceToKingDifference = distanceToKingPotential - distanceToKingCurrent;
+                //Debug.Log(distanceToKingDifference);
+                //if (distanceToKingDifference >= -0.13f)
+                //{
+                //    //Pawns can onlu move away from their king's spawn tile
+                //    SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tileCheckingID);
+                //}
             }
         }
         else if (piece.type == Piece.Type.King)
         {
             //Kings move/capture one edge away - todo: castling
-            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
-            for (int i = 0; i < tilesToCheck.Count; i++)
+            List<int> tileNeighborsToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            for (int i = 0; i < tileNeighborsToCheck.Count; i++)
             {
-                SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
+                int tileCheckingID = generation.tiles[tileNeighborsToCheck[i]].id;
+
+                SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tileCheckingID);
             }
         }
         else if (piece.type == Piece.Type.Knight)
@@ -77,178 +98,176 @@ public class PieceController : MonoBehaviour
             List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsCornerSide;
             for (int i = 0; i < tilesToCheck.Count; i++)
             {
-                SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
+                SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, generation.tiles[tilesToCheck[i]].id);
             }
         }
-        else if (piece.type == Piece.Type.Bishop)
+        else if (piece.type == Piece.Type.Bishop || piece.type == Piece.Type.Rook || piece.type == Piece.Type.Queen)
         {
-            //Initial move - check each "direction" for valid moves
-            List<int> tilesToCheck;
-            bool previousTileWasEdgeInitial;
-            for (int i = 0; i < 2; i++)
+            if (piece.type == Piece.Type.Bishop || piece.type == Piece.Type.Queen)
             {
-                //First "direction" to start with is edges
-                tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
-                previousTileWasEdgeInitial = true;
-                if (i == 1)
+                //Initial move - check each "direction" for valid moves
+                List<int> tilesToCheck;
+                bool previousTileWasEdgeInitial;
+                for (int i = 0; i < 2; i++)
                 {
-                    //Next pass, immedates will be direct corners
-                    tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsCornerDirect;
-                    previousTileWasEdgeInitial = false;
-                }
-                
-                for (int j = 0; j < tilesToCheck.Count; j++)
-                {
-                    //EACH EDGE TILE AROUND THE PIECE
-                    int immediateTileID = generation.tiles[tilesToCheck[j]].id;
-
-                    //Base interactions around immediate edges
-                    if (!SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, immediateTileID))
+                    //First "direction" to start with is edges
+                    tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+                    previousTileWasEdgeInitial = true;
+                    if (i == 1)
                     {
-                        //Only recur if the immediate tile is unoccupied
-                        //Recursion
-                        //Setup default variables to be used in recursion
-                        int currentTileID = immediateTileID; //start recursion from an immediate edge
-                        int previous1TileID = immediateTileID;
-                        int previous2TileID = piece.tileID;
-                        List<int> tilesToCheckInRecursion;
-                        bool previousTileWasEdge = previousTileWasEdgeInitial;
+                        //Next pass, immedates will be direct corners
+                        tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsCornerDirect;
+                        previousTileWasEdgeInitial = false;
+                    }
 
-                        int tileDistance = 11;
-                        for (int k = 0; k < tileDistance; k++)
+                    for (int j = 0; j < tilesToCheck.Count; j++)
+                    {
+                        //EACH EDGE TILE AROUND THE PIECE
+                        int immediateTileID = generation.tiles[tilesToCheck[j]].id;
+
+                        //Base interactions around immediate edges
+                        if (!SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, immediateTileID))
                         {
-                            //Protect against dead ends
-                            bool deadEndThereforeBreakRecursionInThisDirection = false;
+                            //Only recur if the immediate tile is unoccupied
+                            //Recursion
+                            //Setup default variables to be used in recursion
+                            int currentTileID = immediateTileID; //start recursion from an immediate edge
+                            int previous1TileID = immediateTileID;
+                            int previous2TileID = piece.tileID;
+                            List<int> tilesToCheckInRecursion;
+                            bool previousTileWasEdge = previousTileWasEdgeInitial;
 
-                            //Recurse
-                            //Alternate between checking edges and corners
-                            if (previousTileWasEdge)
+                            int tileDistance = 11;
+                            for (int k = 0; k < tileDistance; k++)
                             {
-                                tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsCornerDirect;
-                            }
-                            else
-                            {
-                                tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsEdge;
-                            }
-                            previousTileWasEdge = !previousTileWasEdge;
+                                //Protect against dead ends
+                                bool deadEndThereforeBreakRecursionInThisDirection = false;
 
-                            //Find the next tile in this direction (there will only be one) and consider adding it to the list of valid moves
-                            for (int w = 0; w < tilesToCheckInRecursion.Count; w++)
-                            {
-                                currentTileID = generation.tiles[tilesToCheckInRecursion[w]].id;
-
-                                //PreviousTileID2 and currentTileID must share no vertices - ensures we aren't veering off to the side and aren't going back somewhere we just came from
-                                int sharedVertices = generation.GetTileSharedVertices(previous2TileID, currentTileID);
-
-                                if (sharedVertices == 0)
+                                //Recurse
+                                //Alternate between checking edges and corners
+                                if (previousTileWasEdge)
                                 {
-                                    //Valid move tile (as long as not occupied by friendly piece)
-                                    if (SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, currentTileID))
+                                    tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsCornerDirect;
+                                }
+                                else
+                                {
+                                    tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsEdge;
+                                }
+                                previousTileWasEdge = !previousTileWasEdge;
+
+                                //Find the next tile in this direction (there will only be one) and consider adding it to the list of valid moves
+                                for (int w = 0; w < tilesToCheckInRecursion.Count; w++)
+                                {
+                                    currentTileID = generation.tiles[tilesToCheckInRecursion[w]].id;
+
+                                    //PreviousTileID2 and currentTileID must share no vertices - ensures we aren't veering off to the side and aren't going back somewhere we just came from
+                                    int sharedVertices = generation.GetTileSharedVertices(previous2TileID, currentTileID);
+
+                                    if (sharedVertices == 0)
                                     {
-                                        //If capture, dead end
-                                        deadEndThereforeBreakRecursionInThisDirection = true;
+                                        //Valid move tile (as long as not occupied by friendly piece)
+                                        if (SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, currentTileID))
+                                        {
+                                            //If tile occupied, dead end - stop recurring along this direction
+                                            deadEndThereforeBreakRecursionInThisDirection = true;
+                                        }
+
+                                        //Break so that we "lock in" the currentTileID so we continue on from that tile instead of continuing from an invalid tile
+                                        break;
                                     }
 
-                                    //Break so that we "lock in" the currentTileID so we continue on from that tile instead of continuing from an invalid tile
+                                    if (w == tilesToCheckInRecursion.Count - 1)
+                                    {
+                                        //Dead end - no more valid moves along this direction - "double break" out of these two layers of nested for loops
+                                        deadEndThereforeBreakRecursionInThisDirection = true;
+                                    }
+                                }
+
+                                if (deadEndThereforeBreakRecursionInThisDirection)
+                                {
                                     break;
                                 }
 
-                                if (w == tilesToCheckInRecursion.Count - 1)
-                                {
-                                    //Dead end - no more valid moves along this direction - "double break" out of these two layers of nested for loops
-                                    deadEndThereforeBreakRecursionInThisDirection = true;
-                                }
+                                //Update tile history
+                                previous2TileID = previous1TileID;
+                                previous1TileID = currentTileID;
                             }
-
-                            if (deadEndThereforeBreakRecursionInThisDirection)
-                            {
-                                break;
-                            }
-
-                            //Update tile history
-                            previous2TileID = previous1TileID;
-                            previous1TileID = currentTileID;
                         }
                     }
                 }
             }
-        }
-        else if (piece.type == Piece.Type.Rook)
-        {
-            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
-            bool previousTileWasEdgeInitial = true;
 
-            for (int j = 0; j < tilesToCheck.Count; j++)
+            if (piece.type == Piece.Type.Rook || piece.type == Piece.Type.Queen)
             {
-                //EACH EDGE TILE AROUND THE PIECE
-                int immediateTileID = generation.tiles[tilesToCheck[j]].id;
-
-                //Base interactions around immediate edges
-                if (!SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, immediateTileID))
+                //Immediate edges
+                List<int> tilesImmediateEdges = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+                for (int i = 0; i < tilesImmediateEdges.Count; i++)
                 {
-                    //Only recur if the immediate tile is unoccupied
-                    //Recursion
-                    //Setup default variables to be used in recursion
-                    int currentTileID = immediateTileID; //start recursion from an immediate edge
-                    int previous1TileID = immediateTileID;
-                    int previous2TileID = piece.tileID;
-                    List<int> tilesToCheckInRecursion;
-                    bool previousTileWasEdge = previousTileWasEdgeInitial;
-
-                    int tileDistance = 11;
-                    for (int k = 0; k < tileDistance; k++)
+                    //Only continue checking along this direction if tile unoccupied
+                    if (!SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tilesImmediateEdges[i]))
                     {
-                        //Protect against dead ends
-                        bool deadEndThereforeBreakRecursionInThisDirection = false;
-
-                        //Recurse
-                        //Alternate between checking edges and corners
-                        if (previousTileWasEdge)
+                        //Edges of those edges
+                        List<int> tilesEdges1Removed = generation.tiles[tilesImmediateEdges[i]].adjacentNeighborIDsEdge;
+                        for (int j = 0; j < tilesEdges1Removed.Count; j++)
                         {
-                            tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsCornerDirect;
-                        }
-                        else
-                        {
-                            tilesToCheckInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsEdge;
-                        }
-                        previousTileWasEdge = !previousTileWasEdge;
-
-                        //Find the next tile in this direction (there will only be one) and consider adding it to the list of valid moves
-                        for (int w = 0; w < tilesToCheckInRecursion.Count; w++)
-                        {
-                            currentTileID = generation.tiles[tilesToCheckInRecursion[w]].id;
-
-                            //PreviousTileID2 and currentTileID must share no vertices - ensures we aren't veering off to the side and aren't going back somewhere we just came from
-                            int sharedVertices = generation.GetTileSharedVertices(previous2TileID, currentTileID);
-
-                            if (sharedVertices == 0)
+                            //Not starting tile
+                            if (tilesEdges1Removed[j] != piece.tileID)
                             {
-                                //Valid move tile (as long as not occupied by friendly piece)
-                                if (SetBasicMoveTileInteractions(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, currentTileID))
+                                //Only continue checking along this direction if tile unoccupied
+                                if (!SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tilesEdges1Removed[j]))
                                 {
-                                    //If capture, dead end
-                                    deadEndThereforeBreakRecursionInThisDirection = true;
+                                    //Recursion - edges of the previous tiles edges
+                                    //Setup default variables to be used in recursion
+                                    List<int> tilesEdgesInRecursion = generation.tiles[tilesEdges1Removed[j]].adjacentNeighborIDsEdge;
+                                    int currentTileID = tilesEdgesInRecursion[0]; //gets overwritten anyway, but this will be the first assignment
+                                    int previous1TileID = tilesEdges1Removed[j];
+                                    int previous2TileID = tilesImmediateEdges[i];
+                                    int previous3TileID = piece.tileID;
+
+                                    int tileDistance = 16;
+                                    for (int k = 0; k < tileDistance; k++)
+                                    {
+                                        //Protect against dead ends
+                                        bool deadEndThereforeBreakRecursionInThisDirection = false;
+
+                                        for (int w = 0; w < tilesEdgesInRecursion.Count; w++)
+                                        {
+                                            //Update which tile we are on
+                                            currentTileID = tilesEdgesInRecursion[w];
+
+                                            //Shares no vertices with tile 3 previous
+                                            int sharedVertices = generation.GetTileSharedVertices(previous3TileID, currentTileID);
+                                            //Debug.Log("Tile " + currentTileID + " shares " + sharedVertices + " vertices with piece's original tile");
+                                            if (sharedVertices == 0)
+                                            {
+                                                //Valid move tile (as long as not occupied by friendly piece)
+                                                if (SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, currentTileID))
+                                                {
+                                                    //If tile occupied, dead end - stop recurring along this direction
+                                                    deadEndThereforeBreakRecursionInThisDirection = true;
+                                                }
+
+                                                //Break so we "lock in" the current tile as the sole valid one
+                                                break;
+                                            }
+                                        }
+
+                                        if (deadEndThereforeBreakRecursionInThisDirection)
+                                        {
+                                            break;
+                                        }
+
+                                        //Update tile history
+                                        previous3TileID = previous2TileID;
+                                        previous2TileID = previous1TileID;
+                                        previous1TileID = currentTileID;
+
+                                        //Setup which tile to check on the next recursion
+                                        tilesEdgesInRecursion = generation.tiles[currentTileID].adjacentNeighborIDsEdge;
+                                    }
                                 }
-
-                                //Break so that we "lock in" the currentTileID so we continue on from that tile instead of continuing from an invalid tile
-                                break;
-                            }
-
-                            if (w == tilesToCheckInRecursion.Count - 1)
-                            {
-                                //Dead end - no more valid moves along this direction - "double break" out of these two layers of nested for loops
-                                deadEndThereforeBreakRecursionInThisDirection = true;
                             }
                         }
-
-                        if (deadEndThereforeBreakRecursionInThisDirection)
-                        {
-                            break;
-                        }
-
-                        //Update tile history
-                        previous2TileID = previous1TileID;
-                        previous1TileID = currentTileID;
                     }
                 }
             }
@@ -258,7 +277,7 @@ public class PieceController : MonoBehaviour
         return validTilesToMoveTo;
     }
 
-    private bool SetBasicMoveTileInteractions(ref List<Move> validTilesToMoveTo, Piece.Allegiance thisAllegiance, Piece.Allegiance enemyAllegiance, int tileID)
+    private bool SetBasicMoveTileInteractionsAndGetIfTileOccupied(ref List<Move> validTilesToMoveTo, Piece.Allegiance thisAllegiance, Piece.Allegiance enemyAllegiance, int tileID)
     {
         //Basic tile interaction:
         //Any tile that is within range of the piece can be moved to as long as it is not occupied by a friendly piece.
@@ -514,7 +533,7 @@ public class PieceController : MonoBehaviour
 
     public void SpawnPiecesDefault()
     {
-        SpawnPiece(Piece.Allegiance.White, Piece.Type.King, 0);
+        SpawnPiece(Piece.Allegiance.White, Piece.Type.King, WHITE_KING_SPAWN_TILE_ID);
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Queen, 3);
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 4);
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Bishop, 16);
@@ -526,8 +545,8 @@ public class PieceController : MonoBehaviour
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 12);
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 8);
         SpawnPiece(Piece.Allegiance.White, Piece.Type.Pawn, 1);
-
-        SpawnPiece(Piece.Allegiance.Black, Piece.Type.King, 52);
+        
+        SpawnPiece(Piece.Allegiance.Black, Piece.Type.King, BLACK_KING_SPAWN_TILE_ID);
         SpawnPiece(Piece.Allegiance.Black, Piece.Type.Queen, 55);
         SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 48);
         SpawnPiece(Piece.Allegiance.Black, Piece.Type.Bishop, 56);

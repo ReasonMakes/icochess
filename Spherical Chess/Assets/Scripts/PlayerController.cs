@@ -21,9 +21,9 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         //Cheats
-        teamWhoseTurnItIs = Piece.Allegiance.White;
-        control.UpdateBottomText();
-        control.UpdateTopRightText();
+        //teamWhoseTurnItIs = Piece.Allegiance.White;
+        //control.UpdateBottomText();
+        //control.UpdateTopRightText();
 
         //Tile selection
         ManipulateTileHighlightAndSelect();
