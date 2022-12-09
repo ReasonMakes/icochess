@@ -12,6 +12,7 @@ https://free3d.com/3d-model/chess-19650.html
 - Left-click on a tile:     	select that tile
 - Right-click on a tile:    	move the piece on the tile you have selected to that tile/capture that enemy piece
 - Scroll up/down:           	move the camera closer/farther from the pentakis icosidodecahedron
+- TAB:							toggle showing/hiding tile names
 - F11:                      	toggle fullscreen
 
 ## Piece Beviours
@@ -48,6 +49,10 @@ Each tile has three distinct types of neighbours.
 
 All tiles that share one vertex but don't have mutual edge neighbours are direct corner neighbours.
 All tiles have exactly 6 side corners, and either 2 or 3 direct corners.
+
+## Tile Names
+
+Because there are 80 faces (unlike the 64 squares on a 2D chess board) we have an expanded set of alphanumeric identifiers for each tile. We go through 20 letters starting at A, with each letter having 4 related tiles (which were created during subdivision). Thus, this pattern: A1, A2, A3, A4; B1, B2, B3, B4; etc.
 
 ## Fundamental Properties of the Pentakis Icosidodecahedron
 

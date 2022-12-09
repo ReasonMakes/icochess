@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class Control : MonoBehaviour
 {
+    public Generation generation;
     public PlayerController playerController;
     public PieceController pieceController;
 
@@ -67,7 +68,8 @@ public class Control : MonoBehaviour
         if (playerController.highlightedTile != null)
         {
             int highlightedTileID = playerController.highlightedTile.GetComponent<TileInstance>().id;
-            tileString = "\nTile " + highlightedTileID;
+            //tileString = "\nTile " + highlightedTileID + " " + generation.tiles[highlightedTileID].humanReadableID + " " + generation.tiles[highlightedTileID].centroidAndNormal;
+            tileString = "\nTile " + generation.tiles[highlightedTileID].humanReadableID;
 
             Piece.Allegiance pieceAllegianceOnHighlightedTile = pieceController.GetTilePieceAllegiance(highlightedTileID);
             if (pieceAllegianceOnHighlightedTile != Piece.Allegiance.None)

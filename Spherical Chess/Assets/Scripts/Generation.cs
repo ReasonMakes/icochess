@@ -13,6 +13,8 @@ public class Generation : MonoBehaviour
     public GameObject pointBillboardPrefab;
     public GameObject points;
     public GameObject prefabTile;
+    public GameObject names;
+    public GameObject namePrefab;
 
     //Procedural mesh
     public Material materialLit;
@@ -236,8 +238,14 @@ public class Generation : MonoBehaviour
             Vector3 normalizedTriangleCenter = new Vector3((triangleCenter.x + 1f) / 2f, (triangleCenter.y + 1f) / 2f, (triangleCenter.z + 1f) / 2f);
             Color tileColor = new Color(normalizedTriangleCenter.x, normalizedTriangleCenter.z, normalizedTriangleCenter.y, 1f);
 
-            tiles.Add(new Tile(
+            char tileHumanReadableIDSymbol1 = (char)((i / 4) + 65); //65 is the ASCII code for A
+            int tileHumanReadableIDSymbol2 = ((i + 1) % 4) + 1;
+            string tileHumanReadableID = "" + tileHumanReadableIDSymbol1 + tileHumanReadableIDSymbol2;
+
+            tiles.Add(
+                new Tile(
                     i,
+                    tileHumanReadableID,
                     vertices[triangleAtIndex.vertexIndexA],
                     vertices[triangleAtIndex.vertexIndexB],
                     vertices[triangleAtIndex.vertexIndexC],
@@ -483,6 +491,7 @@ public class Generation : MonoBehaviour
 public class Tile
 {
     public int id;
+    public string humanReadableID;
     public GameObject instanceTileGameObject;
     public List<int> adjacentNeighborIDsEdge = new List<int> { };
     public List<int> adjacentNeighborIDsCorner = new List<int> { };
@@ -498,6 +507,7 @@ public class Tile
     public Tile
     (
         int id,
+        string humanReadableID,
         Vector3 vertexA,
         Vector3 vertexB,
         Vector3 vertexC,
@@ -506,6 +516,7 @@ public class Tile
     )
     {
         this.id = id;
+        this.humanReadableID = humanReadableID;
         this.vertexA = vertexA;
         this.vertexB = vertexB;
         this.vertexC = vertexC;

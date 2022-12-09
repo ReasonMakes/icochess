@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -19,6 +20,8 @@ public class PlayerController : MonoBehaviour
     [System.NonSerialized] public Piece.Allegiance teamWhoseTurnItIs = Piece.Allegiance.White;
     List<PieceController.Move> validMoves = new List<PieceController.Move> { };
 
+    private bool showTileNamesOnTiles = false;
+
     private void Update()
     {
         //Cheats
@@ -29,6 +32,36 @@ public class PlayerController : MonoBehaviour
         //Tile selection
         ManipulateTileHighlightAndSelect();
         ManipulateTileMovePiece();
+
+        //Show/hide tile names
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (showTileNamesOnTiles)
+            {
+                //Destroy all names
+                for (int i = 0; i < generation.names.transform.childCount; i++)
+                {
+                    Destroy(generation.names.transform.GetChild(i).gameObject);
+                }
+            }
+            else
+            {
+                //Spawn names
+                for (int i = 0; i < generation.tiles.Count; i++)
+                {
+                    GameObject instanceName = Instantiate(
+                        generation.namePrefab,
+                        generation.tiles[i].centroidAndNormal * 1.006f, //1.003f,
+                        Quaternion.identity
+                    );
+                    instanceName.transform.parent = generation.names.transform;
+                    instanceName.transform.rotation = Quaternion.LookRotation(-generation.tiles[i].centroidAndNormal);
+                    instanceName.GetComponent<TextMeshPro>().text = generation.tiles[i].humanReadableID;
+                }
+            }
+
+            showTileNamesOnTiles = !showTileNamesOnTiles;
+        }
     }
 
     private void ManipulateTileHighlightAndSelect()

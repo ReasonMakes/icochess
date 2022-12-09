@@ -478,7 +478,7 @@ public class PieceController : MonoBehaviour
                             //In check!
 
                             //Check source
-                            control.infoTopLeft.text += "\n" + piece.transform.name + " on " + piece.tileID;
+                            control.infoTopLeft.text += "\n" + piece.transform.name + " on " + generation.tiles[piece.tileID].humanReadableID;
 
                             //Return result
                             return true;
