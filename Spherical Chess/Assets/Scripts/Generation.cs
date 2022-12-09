@@ -269,6 +269,21 @@ public class Generation : MonoBehaviour
         TilesGetBaseNeighbourData();
         TilesGetSideNeighborData();
         TileGetDirectNeighborData();
+
+        //Assign colour
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            if (tiles[i].adjacentNeighborIDsCornerDirect.Count == 3)
+            {
+                tiles[i].color = new Color(
+                    Mathf.Clamp01(tiles[i].color.r * 1.5f),
+                    Mathf.Clamp01(tiles[i].color.g * 1.5f),
+                    Mathf.Clamp01(tiles[i].color.b * 1.5f)
+                );
+            }
+
+            tiles[i].instanceTileGameObject.GetComponent<MeshRenderer>().material.color = tiles[i].color;
+        }
     }
 
     private void GenerateTile(Tile tile, int index)
@@ -289,10 +304,14 @@ public class Generation : MonoBehaviour
         MeshFilter meshFilter = instanceTile.AddComponent<MeshFilter>();
         meshFilter.mesh = mesh;
 
-        //Colour
+        //Material
         MeshRenderer meshRenderer = instanceTile.AddComponent<MeshRenderer>();
         meshRenderer.material = materialLit;
-        meshRenderer.material.color = tile.color;
+
+        ////Colour
+        //MeshRenderer meshRenderer = instanceTile.AddComponent<MeshRenderer>();
+        //meshRenderer.material = materialLit;
+        //meshRenderer.material.color = tile.color;
 
         //Collider (for selecting with raycasting)
         MeshCollider meshCollider = instanceTile.AddComponent<MeshCollider>();
