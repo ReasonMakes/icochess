@@ -16,7 +16,7 @@ https://free3d.com/3d-model/chess-19650.html
 
 ## Piece Beviours
 
-- Pawns:			move/capture one edge away. Unlike in 2D chess, there is no en passant and no promoting; and pawns can move "backwards"
+- Pawns:			move/capture one edge away. Pawns can move/capture two edges away the first time they move. Unlike in 2D chess, there is no en passant and no promoting; and pawns can move "backwards"
 - Knights:	  		move/capture one side corner away, ignoring obstructions in the way
 - Bishops:			move/capture infinitely from edges to direct corners and vice versa along one direction
 - Rooks:			move/capture infinitely from edge to edge along one direction

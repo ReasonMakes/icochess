@@ -252,16 +252,22 @@ public class PlayerController : MonoBehaviour
                 //Is a valid move?
                 if (validMoveIndex != -1)
                 {
+                    //Piece ref
+                    Piece piece = generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>();
+
                     //Capture piece?
                     if (validMoves[validMoveIndex].MOVE_TYPE == PieceController.Move.MoveType.Capture)
                     {
                         //Destroy enemy piece
                         Destroy(generation.tiles[highlightedTileID].instancePieceGameObject);
                     }
-                    
+
                     //Move there
-                    generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>().SetTile(highlightedTileID);
-                    
+                    piece.SetTile(highlightedTileID);
+
+                    //Has moved
+                    piece.hasMoved = true;
+
                     //Deselect, clear valid moves, and end turn
                     DeselectTile();
                     validMoves.Clear();

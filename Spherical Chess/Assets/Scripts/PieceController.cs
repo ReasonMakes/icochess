@@ -86,13 +86,35 @@ public class PieceController : MonoBehaviour
         //Each piece type has their own set of valid moves
         if (piece.type == Piece.Type.Pawn)
         {
-            //Pawns move/capture one edge away
+            //Pawns move/capture one edge away. Can move twice the first time they move.
             List<int> tileNeighborsToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
             for (int i = 0; i < tileNeighborsToCheck.Count; i++)
             {
                 int tileCheckingID = generation.tiles[tileNeighborsToCheck[i]].id;
 
-                SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tileCheckingID, spawnPoints);
+                bool occupiedTile = SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                    ref validTilesToMoveTo,
+                    piece.allegiance,
+                    enemyAllegiance,
+                    tileCheckingID,
+                    spawnPoints
+                );
+
+                //Can move twice the first time they move
+                if (!occupiedTile && !piece.hasMoved)
+                {
+                    for (int j = 0; j < generation.tiles[tileCheckingID].adjacentNeighborIDsEdge.Count; j++)
+                    {
+                        int tileCheckingForDoubleMoveID = generation.tiles[tileCheckingID].adjacentNeighborIDsEdge[j];
+                        SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                            ref validTilesToMoveTo,
+                            piece.allegiance,
+                            enemyAllegiance,
+                            tileCheckingForDoubleMoveID,
+                            spawnPoints
+                        );
+                    }
+                }
 
                 ////Pawns only being able to "move forward" was unintuitive
                 //float distanceToKingCurrent = (generation.tiles[piece.tileID].centroidAndNormal - generation.tiles[pieceKingTileID].centroidAndNormal).magnitude;
