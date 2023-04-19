@@ -148,12 +148,16 @@ public class PlayerController : MonoBehaviour
                         generation.tiles[selectedTileID].instanceTileGameObject.GetComponent<MeshRenderer>().material.color = Color.yellow;
 
                         //Get valid moves for the piece on that tile (this will return None if the tile is unoccopied)
+                        //Only accept moves which don't put yourself in check!
                         if (pieceController.GetTilePieceAllegiance(selectedTileID) == teamWhoseTurnItIs)
                         {
+                            Piece piece = generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>();
                             validMoves.Clear();
                             validMoves = pieceController.GetValidTilesToMoveTo(
-                                generation.tiles[selectedTileID].instancePieceGameObject.GetComponent<Piece>(),
-                                true
+                                piece,
+                                piece.pieceData,
+                                true,
+                                false
                             );
                         }
                     }
@@ -299,7 +303,7 @@ public class PlayerController : MonoBehaviour
                     piece.SetTile(highlightedTileID);
 
                     //Has moved
-                    piece.hasMoved = true;
+                    piece.pieceData.hasMoved = true;
 
                     //Deselect, clear valid moves, and end turn
                     DeselectTile();
@@ -331,27 +335,35 @@ public class PlayerController : MonoBehaviour
     private void EndTurn()
     {
         //Check for checks, then switch whose turn it is
+
+        //Defaults
         control.infoTopLeft.text = "Checks:";
         control.infoTopLeft.gameObject.SetActive(false);
         pieceController.checkState = PieceController.Check.None;
+        Piece.Allegiance defendingTeam = Piece.Allegiance.None;
+        PieceController.Check defendingTeamPotentialCheckType = PieceController.Check.None;
+
+        //Get inverse of whose turn it is
         if (teamWhoseTurnItIs == Piece.Allegiance.White)
         {
-            if (pieceController.CheckForChecksAgainst(Piece.Allegiance.Black))
-            {
-                pieceController.checkState = PieceController.Check.Black;
-                control.infoTopLeft.gameObject.SetActive(true);
-            }
-            teamWhoseTurnItIs = Piece.Allegiance.Black;
+            defendingTeam = Piece.Allegiance.Black;
+            defendingTeamPotentialCheckType = PieceController.Check.Black;
         }
         else if (teamWhoseTurnItIs == Piece.Allegiance.Black)
         {
-            if (pieceController.CheckForChecksAgainst(Piece.Allegiance.White))
-            {
-                pieceController.checkState = PieceController.Check.White;
-                control.infoTopLeft.gameObject.SetActive(true);
-            }
-            teamWhoseTurnItIs = Piece.Allegiance.White;
+            defendingTeam = Piece.Allegiance.White;
+            defendingTeamPotentialCheckType = PieceController.Check.White;
         }
+
+        //Check for checks
+        if (pieceController.CheckForChecksAgainst(defendingTeam, -1, null))
+        {
+            pieceController.checkState = defendingTeamPotentialCheckType;
+            control.infoTopLeft.gameObject.SetActive(true);
+        }
+
+        //Change whose turn it is
+        teamWhoseTurnItIs = defendingTeam;
 
         //Update HUD to show on-screen info like whose turn it is
         control.UpdateBottomText();

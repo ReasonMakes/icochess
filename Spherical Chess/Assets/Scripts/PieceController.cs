@@ -37,7 +37,7 @@ public class PieceController : MonoBehaviour
         public enum MoveType
         {
             Forbidden,
-            Move,
+            Reposition,
             Capture
         }
         public readonly MoveType MOVE_TYPE;
@@ -61,57 +61,58 @@ public class PieceController : MonoBehaviour
         selectedMaterialForBlack = smoothMetalRed;
     }
 
-    public List<Move> GetValidTilesToMoveTo(Piece piece, bool spawnPoints)
+    public List<Move> GetValidTilesToMoveTo(Piece piece, PieceData pieceData, bool spawnPoints, bool ignorePuttingSelfInCheck)
     {
         //List of valid moves we will return
         List<Move> validTilesToMoveTo = new List<Move> { };
 
-        //What are this pieces friends and enemies?
-        int pieceKingTileID = -1;
+        //What are this piece's friends and enemies?
         Piece.Allegiance enemyAllegiance = Piece.Allegiance.None;
-        if (piece.allegiance == Piece.Allegiance.White)
+        if (pieceData.allegiance == Piece.Allegiance.White)
         {
             enemyAllegiance = Piece.Allegiance.Black;
-            pieceKingTileID = WHITE_KING_SPAWN_TILE_ID;
         }
-        else if (piece.allegiance == Piece.Allegiance.Black)
+        else if (pieceData.allegiance == Piece.Allegiance.Black)
         {
             enemyAllegiance = Piece.Allegiance.White;
-            pieceKingTileID = BLACK_KING_SPAWN_TILE_ID;
         }
 
         //Clear old valid move points
-        DestroyAllValidMovePoints();
+        //DestroyAllValidMovePoints();
 
         //Each piece type has their own set of valid moves
-        if (piece.type == Piece.Type.Pawn)
+        if (pieceData.type == Piece.Type.Pawn)
         {
             //Pawns move/capture one edge away. Can move twice the first time they move.
-            List<int> tileNeighborsToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            List<int> tileNeighborsToCheck = generation.tiles[pieceData.tileID].adjacentNeighborIDsEdge;
             for (int i = 0; i < tileNeighborsToCheck.Count; i++)
             {
                 int tileCheckingID = generation.tiles[tileNeighborsToCheck[i]].id;
 
                 bool occupiedTile = SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
                     ref validTilesToMoveTo,
-                    piece.allegiance,
+                    piece,
+                    pieceData,
                     enemyAllegiance,
                     tileCheckingID,
-                    spawnPoints
+                    spawnPoints,
+                    ignorePuttingSelfInCheck
                 );
 
                 //Can move twice the first time they move
-                if (!occupiedTile && !piece.hasMoved)
+                if (!occupiedTile && !pieceData.hasMoved)
                 {
                     for (int j = 0; j < generation.tiles[tileCheckingID].adjacentNeighborIDsEdge.Count; j++)
                     {
                         int tileCheckingForDoubleMoveID = generation.tiles[tileCheckingID].adjacentNeighborIDsEdge[j];
                         SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
                             ref validTilesToMoveTo,
-                            piece.allegiance,
+                            piece,
+                            pieceData,
                             enemyAllegiance,
                             tileCheckingForDoubleMoveID,
-                            spawnPoints
+                            spawnPoints,
+                            ignorePuttingSelfInCheck
                         );
                     }
                 }
@@ -128,29 +129,45 @@ public class PieceController : MonoBehaviour
                 //}
             }
         }
-        else if (piece.type == Piece.Type.King)
+        else if (pieceData.type == Piece.Type.King)
         {
             //Kings move/capture one edge away
-            List<int> tileNeighborsToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+            List<int> tileNeighborsToCheck = generation.tiles[pieceData.tileID].adjacentNeighborIDsEdge;
             for (int i = 0; i < tileNeighborsToCheck.Count; i++)
             {
                 int tileCheckingID = generation.tiles[tileNeighborsToCheck[i]].id;
 
-                SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tileCheckingID, spawnPoints);
+                SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                    ref validTilesToMoveTo,
+                    piece,
+                    pieceData,
+                    enemyAllegiance,
+                    tileCheckingID,
+                    spawnPoints,
+                    ignorePuttingSelfInCheck
+                );
             }
         }
-        else if (piece.type == Piece.Type.Knight)
+        else if (pieceData.type == Piece.Type.Knight)
         {
             //Knights move/capture one side corner away, ignoring obstructions in the way
-            List<int> tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsCornerSide;
+            List<int> tilesToCheck = generation.tiles[pieceData.tileID].adjacentNeighborIDsCornerSide;
             for (int i = 0; i < tilesToCheck.Count; i++)
             {
-                SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, generation.tiles[tilesToCheck[i]].id, spawnPoints);
+                SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                    ref validTilesToMoveTo,
+                    piece,
+                    pieceData,
+                    enemyAllegiance,
+                    generation.tiles[tilesToCheck[i]].id,
+                    spawnPoints,
+                    ignorePuttingSelfInCheck
+                );
             }
         }
-        else if (piece.type == Piece.Type.Bishop || piece.type == Piece.Type.Rook || piece.type == Piece.Type.Queen)
+        else if (pieceData.type == Piece.Type.Bishop || pieceData.type == Piece.Type.Rook || pieceData.type == Piece.Type.Queen)
         {
-            if (piece.type == Piece.Type.Bishop || piece.type == Piece.Type.Queen)
+            if (pieceData.type == Piece.Type.Bishop || pieceData.type == Piece.Type.Queen)
             {
                 //Bishops move/capture infinitely from edges to direct corners and vice versa along one direction
                 //Initial move - check each "direction" for valid moves
@@ -159,12 +176,12 @@ public class PieceController : MonoBehaviour
                 for (int i = 0; i < 2; i++)
                 {
                     //First "direction" to start with is edges
-                    tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+                    tilesToCheck = generation.tiles[pieceData.tileID].adjacentNeighborIDsEdge;
                     previousTileWasEdgeInitial = true;
                     if (i == 1)
                     {
                         //Next pass, immedates will be direct corners
-                        tilesToCheck = generation.tiles[piece.tileID].adjacentNeighborIDsCornerDirect;
+                        tilesToCheck = generation.tiles[pieceData.tileID].adjacentNeighborIDsCornerDirect;
                         previousTileWasEdgeInitial = false;
                     }
 
@@ -174,14 +191,25 @@ public class PieceController : MonoBehaviour
                         int immediateTileID = generation.tiles[tilesToCheck[j]].id;
 
                         //Base interactions around immediate edges
-                        if (!SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, immediateTileID, spawnPoints))
+                        if
+                        (
+                            !SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                                ref validTilesToMoveTo,
+                                piece,
+                                pieceData,
+                                enemyAllegiance,
+                                immediateTileID,
+                                spawnPoints,
+                                ignorePuttingSelfInCheck
+                            )
+                        )
                         {
                             //Only recur if the immediate tile is unoccupied
                             //Recursion
                             //Setup default variables to be used in recursion
                             int currentTileID = immediateTileID; //start recursion from an immediate edge
                             int previous1TileID = immediateTileID;
-                            int previous2TileID = piece.tileID;
+                            int previous2TileID = pieceData.tileID;
                             List<int> tilesToCheckInRecursion;
                             bool previousTileWasEdge = previousTileWasEdgeInitial;
 
@@ -214,7 +242,18 @@ public class PieceController : MonoBehaviour
                                     if (sharedVertices == 0)
                                     {
                                         //Valid move tile (as long as not occupied by friendly piece)
-                                        if (SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, currentTileID, spawnPoints))
+                                        if
+                                        (
+                                            SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                                                ref validTilesToMoveTo,
+                                                piece,
+                                                pieceData,
+                                                enemyAllegiance,
+                                                currentTileID,
+                                                spawnPoints,
+                                                ignorePuttingSelfInCheck
+                                            )
+                                        )
                                         {
                                             //If tile occupied, dead end - stop recurring along this direction
                                             deadEndThereforeBreakRecursionInThisDirection = true;
@@ -245,25 +284,45 @@ public class PieceController : MonoBehaviour
                 }
             }
 
-            if (piece.type == Piece.Type.Rook || piece.type == Piece.Type.Queen)
+            if (pieceData.type == Piece.Type.Rook || pieceData.type == Piece.Type.Queen)
             {
                 //Rooks move/capture infinitely from edge to edge along one direction
                 //Immediate edges
-                List<int> tilesImmediateEdges = generation.tiles[piece.tileID].adjacentNeighborIDsEdge;
+                List<int> tilesImmediateEdges = generation.tiles[pieceData.tileID].adjacentNeighborIDsEdge;
                 for (int i = 0; i < tilesImmediateEdges.Count; i++)
                 {
                     //Only continue checking along this direction if tile unoccupied
-                    if (!SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tilesImmediateEdges[i], spawnPoints))
+                    if (
+                        !SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                            ref validTilesToMoveTo,
+                            piece,
+                            pieceData,
+                            enemyAllegiance,
+                            tilesImmediateEdges[i],
+                            spawnPoints,
+                            ignorePuttingSelfInCheck
+                        )
+                    )
                     {
                         //Edges of those edges
                         List<int> tilesEdges1Removed = generation.tiles[tilesImmediateEdges[i]].adjacentNeighborIDsEdge;
                         for (int j = 0; j < tilesEdges1Removed.Count; j++)
                         {
                             //Not starting tile
-                            if (tilesEdges1Removed[j] != piece.tileID)
+                            if (tilesEdges1Removed[j] != pieceData.tileID)
                             {
                                 //Only continue checking along this direction if tile unoccupied
-                                if (!SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, tilesEdges1Removed[j], spawnPoints))
+                                if (
+                                    !SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                                        ref validTilesToMoveTo,
+                                        piece,
+                                        pieceData,
+                                        enemyAllegiance,
+                                        tilesEdges1Removed[j],
+                                        spawnPoints,
+                                        ignorePuttingSelfInCheck
+                                    )
+                                )
                                 {
                                     //Recursion - edges of the previous tiles edges
                                     //Setup default variables to be used in recursion
@@ -271,7 +330,7 @@ public class PieceController : MonoBehaviour
                                     int currentTileID = tilesEdgesInRecursion[0]; //gets overwritten anyway, but this will be the first assignment
                                     int previous1TileID = tilesEdges1Removed[j];
                                     int previous2TileID = tilesImmediateEdges[i];
-                                    int previous3TileID = piece.tileID;
+                                    int previous3TileID = pieceData.tileID;
 
                                     int tileDistance = 16;
                                     for (int k = 0; k < tileDistance; k++)
@@ -290,7 +349,17 @@ public class PieceController : MonoBehaviour
                                             if (sharedVertices == 0)
                                             {
                                                 //Valid move tile (as long as not occupied by friendly piece)
-                                                if (SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(ref validTilesToMoveTo, piece.allegiance, enemyAllegiance, currentTileID, spawnPoints))
+                                                if (
+                                                    SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints(
+                                                        ref validTilesToMoveTo,
+                                                        piece,
+                                                        pieceData,
+                                                        enemyAllegiance,
+                                                        currentTileID,
+                                                        spawnPoints,
+                                                        ignorePuttingSelfInCheck
+                                                    )
+                                                )
                                                 {
                                                     //If tile occupied, dead end - stop recurring along this direction
                                                     deadEndThereforeBreakRecursionInThisDirection = true;
@@ -326,9 +395,15 @@ public class PieceController : MonoBehaviour
         return validTilesToMoveTo;
     }
 
+    //Returns whether tile is occupied
+    //Adds this tile as a valid move for the selected piece if it is unoccupied or has an enemy piece on it
+    //Spawns valid move point indicators
     private bool SetBasicMoveTileInteractionsAndGetIfTileOccupiedAndSpawnPoints
     (
-        ref List<Move> validTilesToMoveTo, Piece.Allegiance thisAllegiance, Piece.Allegiance enemyAllegiance, int tileID, bool spawnPoints
+        ref List<Move> validTilesToMoveTo,
+        Piece piece, PieceData pieceData, Piece.Allegiance enemyAllegiance,
+        int tileID,
+        bool spawnPoints, bool ignorePuttingSelfInCheck
     )
     {
         //Basic tile interaction:
@@ -341,46 +416,101 @@ public class PieceController : MonoBehaviour
         Piece.Allegiance pieceAllegienceOnTile = GetTilePieceAllegiance(tileID);
         if (pieceAllegienceOnTile == enemyAllegiance)
         {
-            validTilesToMoveTo.Add(new Move(Move.MoveType.Capture, tileID));
+            //Valid move - capture
+            SetMoveTileInteractions(ref validTilesToMoveTo, Move.MoveType.Capture, ignorePuttingSelfInCheck, piece, pieceData, tileID);
+
+            //Spawn valid move UI point
             if (spawnPoints)
             {
                 SpawnValidMovePoint(tileID, true);
             }
+
+            //Tile is occupied by an enemy
             isTileOccupied = true;
         }
         else if (pieceAllegienceOnTile == Piece.Allegiance.None)
         {
-            validTilesToMoveTo.Add(new Move(Move.MoveType.Move, tileID));
+            //Valid move - reposition
+            SetMoveTileInteractions(ref validTilesToMoveTo, Move.MoveType.Reposition, ignorePuttingSelfInCheck, piece, pieceData, tileID);
+
+            //Spawn valid move UI point
             if (spawnPoints)
             {
                 SpawnValidMovePoint(tileID, false);
             }
+
+            //Tile is unoccupied
         }
-        else if (pieceAllegienceOnTile == thisAllegiance)
+        else if (pieceAllegienceOnTile == pieceData.allegiance)
         {
+            //Not a valid move
+
+            //Tile is occupied by a friend
             isTileOccupied = true;
         }
 
         return isTileOccupied;
     }
 
+    private void SetMoveTileInteractions(
+        ref List<Move> validTilesToMoveTo,
+        Move.MoveType moveType,
+        bool ignorePuttingSelfInCheck,
+        Piece piece, PieceData pieceData,
+        int tileID
+    )
+    {
+        if (ignorePuttingSelfInCheck)
+        {
+            validTilesToMoveTo.Add(new Move(Move.MoveType.Capture, tileID));
+        }
+        else
+        {
+            //Only add this move as a valid move if there are no checks against themself in the hypothetical position
+            PieceData hypotheticalPieceData = new PieceData();
+            hypotheticalPieceData.tileID = tileID;
+
+            if (
+                !CheckForChecksAgainst(
+                    pieceData.allegiance,
+                    piece.transform.GetSiblingIndex(),
+                    hypotheticalPieceData
+                )
+            )
+            {
+                validTilesToMoveTo.Add(new Move(moveType, tileID));
+            }
+        }
+    }
+
     private void SpawnValidMovePoint(int tileID, bool isCaptureTile)
     {
+        Debug.Log("Move point spawned!");
+
+        //Spawn the indicator
         GameObject instanceValidMovePoint = Instantiate(
             validMovePointPrefab,
             generation.tiles[tileID].centroidAndNormal * 1.006f, //1.003f,
             Quaternion.identity
         );
+
+        //Capture indicators are larger than ove indicators so they're visible underneath pieces
         if (isCaptureTile)
         {
             instanceValidMovePoint.transform.localScale = Vector3.one * 0.115f;
         }
+
+        //Place in hierarchy
         instanceValidMovePoint.transform.parent = generation.points.transform;
+
+        //Rotate to point away from the board
         instanceValidMovePoint.transform.rotation = Quaternion.LookRotation(generation.tiles[tileID].centroidAndNormal);
     }
 
     public void DestroyAllValidMovePoints()
     {
+        Debug.Log("Destroyed all valid move points!");
+
         for (int i = 0; i < generation.points.transform.childCount; i++)
         {
             Destroy(generation.points.transform.GetChild(i).gameObject);
@@ -392,7 +522,7 @@ public class PieceController : MonoBehaviour
         if (generation.tiles[tileID].instancePieceGameObject != null)
         {
             //Occupied
-            return generation.tiles[tileID].instancePieceGameObject.GetComponent<Piece>().type;
+            return generation.tiles[tileID].instancePieceGameObject.GetComponent<Piece>().pieceData.type;
         }
 
         //Unoccupied by default
@@ -404,7 +534,7 @@ public class PieceController : MonoBehaviour
         if (generation.tiles[tileID].instancePieceGameObject != null)
         {
             //Occupied
-            return generation.tiles[tileID].instancePieceGameObject.GetComponent<Piece>().allegiance;
+            return generation.tiles[tileID].instancePieceGameObject.GetComponent<Piece>().pieceData.allegiance;
         }
 
         //Unoccupied - no allegiance
@@ -449,13 +579,13 @@ public class PieceController : MonoBehaviour
         Piece instancePieceScript = instancePawn.GetComponent<Piece>();
         instancePieceScript.generation = generation;
         instancePieceScript.pieceController = this;
-        instancePieceScript.allegiance = allegiance;
-        instancePieceScript.type = type;
+        instancePieceScript.pieceData.allegiance = allegiance;
+        instancePieceScript.pieceData.type = type;
         instancePieceScript.SetModel();
         instancePieceScript.SetTile(tileID);
     }
 
-    public bool CheckForChecksAgainst(Piece.Allegiance defendingTeam)
+    public bool CheckForChecksAgainst(Piece.Allegiance defendingTeam, int hypotheticalMovedPieceChildIndex, PieceData hypotheticalPieceData)
     {
         //Checked at the end of a turn, BEFORE whose turn it is actually changes
         //teamToCheckChecks will be the team whose turn is just ending now
@@ -463,22 +593,42 @@ public class PieceController : MonoBehaviour
         for (int i = 0; i < transform.childCount; i++)
         {
             //Every piece on the "board"
-            Piece piece = transform.GetChild(i).GetComponent<Piece>();
-            if (piece.allegiance != defendingTeam)
+
+            //Get piece data
+            Piece piece = null;
+            PieceData pieceData;
+            if (i == hypotheticalMovedPieceChildIndex)
             {
-                //All enemy pieces
-                List<Move> validMoves = GetValidTilesToMoveTo(piece, false);
+                //We can leave piece null here as we won't need the reference anyway when ignoring putting self in check
+                pieceData = hypotheticalPieceData;
+            }
+            else
+            {
+                piece = transform.GetChild(i).GetComponent<Piece>();
+                pieceData = piece.pieceData;
+            }
+            
+            //Make sure this piece is opposed to the defending team
+            if (pieceData.allegiance != defendingTeam)
+            {
+                //All pieces that are enemies to the defendingTeam
+
+                //See if any moves could capture the king if neglected
+                //Avoid infinite loop: don't check whether the enemy capturing your king would put them in check, because it wouldn't matter at that point
+                List<Move> validMoves = GetValidTilesToMoveTo(piece, pieceData, false, true);
                 for (int j = 0; j < validMoves.Count; j++)
                 {
                     //All valid moves for this enemy piece
                     if (GetTilePieceType(validMoves[j].tileID) == Piece.Type.King)
                     {
+                        //This move goes to a king piece
                         if (GetTilePieceAllegiance(validMoves[j].tileID) == defendingTeam)
                         {
+                            //This move goes to the defendingTeam's king piece
                             //In check!
 
                             //Check source
-                            control.infoTopLeft.text += "\n" + piece.transform.name + " on " + generation.tiles[piece.tileID].humanReadableID;
+                            control.infoTopLeft.text += "\n" + piece.transform.name + " on " + generation.tiles[piece.pieceData.tileID].humanReadableID;
 
                             //Return result
                             return true;

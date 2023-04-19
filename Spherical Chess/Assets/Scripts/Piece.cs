@@ -21,7 +21,7 @@ public class Piece : MonoBehaviour
         White,
         Black
     }
-    public Allegiance allegiance = Allegiance.White;
+    
 
     public enum Type
     {
@@ -33,39 +33,43 @@ public class Piece : MonoBehaviour
         Queen,
         King
     }
-    public Type type = Type.Pawn;
 
-    //Tile this piece is occupying
-    public int tileID = -1;
-
-    //For use with pawns (for 2 moves on the first move) and the king (for castling)
-    public bool hasMoved = false;
+    [System.NonSerialized] public PieceData pieceData = new PieceData();
 
     public void SetModel()
     {
-        if (type == Type.Pawn)      { GetComponent<MeshFilter>().mesh = meshPawn; }
-        if (type == Type.Knight)    { GetComponent<MeshFilter>().mesh = meshKnight; }
-        if (type == Type.Bishop)    { GetComponent<MeshFilter>().mesh = meshBishop; }
-        if (type == Type.Rook)      { GetComponent<MeshFilter>().mesh = meshRook; }
-        if (type == Type.Queen)     { GetComponent<MeshFilter>().mesh = meshQueen; }
-        if (type == Type.King)      { GetComponent<MeshFilter>().mesh = meshKing; }
+        if (pieceData.type == Type.Pawn)      { GetComponent<MeshFilter>().mesh = meshPawn; }
+        if (pieceData.type == Type.Knight)    { GetComponent<MeshFilter>().mesh = meshKnight; }
+        if (pieceData.type == Type.Bishop)    { GetComponent<MeshFilter>().mesh = meshBishop; }
+        if (pieceData.type == Type.Rook)      { GetComponent<MeshFilter>().mesh = meshRook; }
+        if (pieceData.type == Type.Queen)     { GetComponent<MeshFilter>().mesh = meshQueen; }
+        if (pieceData.type == Type.King)      { GetComponent<MeshFilter>().mesh = meshKing; }
 
-        if (allegiance == Allegiance.White) { GetComponent<MeshRenderer>().material = pieceController.selectedMaterialForWhite; }
-        if (allegiance == Allegiance.Black) { GetComponent<MeshRenderer>().material = pieceController.selectedMaterialForBlack; }
+        if (pieceData.allegiance == Allegiance.White) { GetComponent<MeshRenderer>().material = pieceController.selectedMaterialForWhite; }
+        if (pieceData.allegiance == Allegiance.Black) { GetComponent<MeshRenderer>().material = pieceController.selectedMaterialForBlack; }
     }
 
     public void SetTile(int tileID)
     {
         //Move the piece to a tile
-        if (this.tileID != -1)
+        if (pieceData.tileID != -1)
         {
-            generation.tiles[this.tileID].instancePieceGameObject = null;   //reset old tile's piece reference
+            generation.tiles[pieceData.tileID].instancePieceGameObject = null;   //reset old tile's piece reference
         }
-        this.tileID = tileID;
+        pieceData.tileID = tileID;
         generation.tiles[tileID].instancePieceGameObject = gameObject;      //set new tile's piece reference
 
         transform.position = generation.tiles[tileID].centroidAndNormal;// * 0.92f;
         transform.rotation = Quaternion.LookRotation(generation.tiles[tileID].centroidAndNormal);
         transform.Rotate(90, 0, 0);
     }
+}
+
+public class PieceData
+{
+    //Default data
+    public Piece.Allegiance allegiance = Piece.Allegiance.White;
+    public Piece.Type type = Piece.Type.Pawn;
+    public int tileID = -1;
+    public bool hasMoved = false; //For use with pawns (for 2 moves on the first move) and the king (for castling)
 }
