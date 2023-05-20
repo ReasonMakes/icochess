@@ -4,6 +4,7 @@
 Models used in-game by me (Reason)
 
 Placeholder models (not used in the game by default) for the chess pieces are by dhruvin_doctor
+
 https://free3d.com/3d-model/chess-19650.html
 
 ## Controls
